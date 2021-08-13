@@ -1,0 +1,29 @@
+---
+CustSetup:
+  - CustName: Test
+    CustCRM: 666666
+    CustVLAN: 666
+
+ApplicationSetup:
+  - ApplicationProto: UDP
+    ApplicationPort: 161
+
+RuleSetup:
+  - RuleSrc: all
+    RuleDst: 10.10.10.10/32
+    RuleApplication: SNMP
+    RuleAction: Permit
+
+AddressSetup:
+  - AddressName: 10.10.10.10/32
+    AddressIP: 10.10.10.10/32
+
+NatSetup:
+  - NatSource:
+    NatSourcePool:
+    NatDestPublicIP:
+    NatDestPrivateIP:
+    NatDestPublicPort:
+    NatDestPrivatePort:
+    NatStaticPublicIP:
+    NatStaticPrivateIP:

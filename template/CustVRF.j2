@@ -1,0 +1,5 @@
+{% for item in CustSetup %}
+set routing-instances {{ item.CustName -}} - {{- item.CustCRM -}} -Untrusted instance-type virtual-router interface reth0. {{- item.CustVLAN }}
+set security zones security-zone {{ item.CustName -}} -Trusted host-inbound-services
+set security zones security-zone {{ item.CustName -}} -Trusted interface reth1. {{- item.CustVLAN }}
+{% endfor -%}
