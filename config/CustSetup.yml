@@ -1,8 +1,9 @@
 ---
 CustSetup:
-  - CustName: Test
-    CustCRM: 666666
-    CustVLAN: 666
+  - CustName: DANS
+    CustCRM: 312703
+    CustUntrustVlan: 3000
+    CustTrustVlan: 3001
 
 ApplicationSetup:
   - ApplicationProto: UDP
