@@ -28,15 +28,15 @@ routing-instances {
 security {
   zones {
     security-zone {{ item.CustName -}} -Untrust- {{- unique_id() }} {
-      apply-group zone-defaults;
-      interface reth0. {{- item.CustUntrustVlan -}} ;
+      apply-groups zone-defaults;
+      interfaces reth0. {{- item.CustUntrustVlan -}} ;
     }
     security-zone {{ item.CustName -}} -Trust- {{- unique_id() }} {
-      apply-group zone-defaults;
-      interface reth0. {{- item.CustTrustVlan -}} ;
+      apply-groups zone-defaults;
+      interfaces reth0. {{- item.CustTrustVlan -}} ;
     }
     security-zone {{ item.CustName -}} -VPN- {{- unique_id() }} {
-      apply-group zone-defaults;
+      apply-groups zone-defaults;
     }
   }
 }
