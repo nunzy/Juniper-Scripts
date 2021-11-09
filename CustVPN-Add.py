@@ -9,7 +9,7 @@ from jnpr.junos.utils.config import Config
 from lxml import etree
 
 ## Read yaml
-mytemplate = Template(open('template/CustRules.j2').read())
+mytemplate = Template(open('template/CustVPN.j2').read())
 mydata = yaml.load(open('config/CustSetup.yml').read(), Loader=yaml.BaseLoader)
 custsetup = mydata["CustSetup"]
 cust_name = mydata['CustSetup'][0]['CustName']
@@ -19,9 +19,9 @@ cust_result = '-'.join([cust_name,cust_crm])
 cust_full = '-'.join([cust_name,cust_crm,cust_id])
 
 ### Render the jinja2 template for debug
-#myconfig = mytemplate.render(mydata)
-#print("\n### Here's the full config:")
-#print(myconfig)
+myconfig = mytemplate.render(mydata)
+print("\n### Here's the full config:")
+print(myconfig)
 
 ## Define connection details
 hostname = "pe-f-00.gwr.uk.hso-group.net"
@@ -60,7 +60,7 @@ if vrf_found!="True":
 
 ## Apply configuration changes
 with Config(dev, mode='exclusive') as cu:
-    cu.load(template_path="template/CustRules.j2", template_vars=mydata, merge=True, format="text")
+    cu.load(template_path="template/CustVPN.j2", template_vars=mydata, merge=True, format="text")
     cu.pdiff()
     junos_commit = input("Commit changes: (yes|no) ")
     if junos_commit=='yes':

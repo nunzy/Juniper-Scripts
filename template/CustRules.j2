@@ -1,0 +1,107 @@
+applications {
+  {%- for app in ApplicationSetup %}
+  application {{ app.ApplicationProto -}} _ {{- app.ApplicationPort }} {
+    protocol {{ app.ApplicationProto -}} ;
+    destination-port {{ app.ApplicationPort -}} ;
+  }
+  {%- endfor %}
+}
+security {
+  policies {
+    {%- for item in CustSetup %}
+    from-zone {{ item.CustName -}} - {{- item.CustCRM -}} -Trust- {{- item.CustID }} to-zone {{ item.CustName -}} - {{- item.CustCRM -}} -Untrust- {{- item.CustID }} {
+      {%- for rule in RuleSetup %}
+      policy {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- rule.RuleSrc -}} _ {{- rule.RuleName -}} -Outbound {
+        match {
+          source-address {{ rule.RuleSrc -}} ;
+          destination-address {{ rule.RuleDst -}} ;
+          application [ {{ rule.RuleApplication }} ] ;
+        }
+        then {
+          {{ rule.RuleAction -}} ;
+        }
+      }
+      {%- endfor %}
+    }
+    {%- endfor %}
+  }
+  zones {
+    {%- for item in CustSetup %}
+    {%- for addr in AddressSetup %}
+    security-zone {{ item.CustName -}} - {{- item.CustCRM -}} - {{- addr.AddressZone -}} - {{- item.CustID }} {
+      address-book {
+        address {{ addr.AddressName }} {{ addr.AddressIP -}} ;
+      }
+    }
+    {%- endfor %}
+    {%- endfor %}
+  }
+  nat {
+    {%- for item in CustSetup %}
+    {%- for nat in NatSetup %}
+    {%- if nat.NatType == 'destination' %}
+    {{ nat.NatType }} {
+      pool {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- nat.NatDestPoolName }} {
+        address {{ nat.NatDestPrivateIP }} port {{ nat.NatDestPrivatePort }}
+      }
+      rule-set {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- nat.NatType }} {
+        from zone {{ item.CustName -}} - {{- item.CustCRM -}} -Untrust- {{- item.CustID -}} ;
+        rule {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- nat.NatDestPoolName }} {
+          match {
+            destination-address {{ nat.NatDestPublicIP -}} ;
+            destination-port {
+              {{ nat.NatDestPublicPort -}} ;
+            }
+          }
+          then {
+            destination-nat {
+              pool {
+                {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- nat.NatDestPoolName -}} ;
+              }
+            }
+          }
+        }
+      }
+    }
+    {%- elif nat.NatType == 'static' %}
+    {{ nat.NatType }} {
+      rule-set {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- nat.NatType }} {
+        from zone {{ item.CustName -}} - {{- item.CustCRM -}} -Untrust- {{- item.CustID -}} ;
+        rule {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- nat.NatStaticName }} {
+          match {
+            destination-address {{ nat.NatStaticPublicIP -}} ;
+          }
+          then {
+            static-nat {
+              prefix {
+                {{ nat.NatStaticPrivateIP -}} ;
+              }
+            }
+          }
+        }
+      }
+    }
+    {%- endif %}
+    {%- endfor %}
+    {%- endfor %}
+  }
+  nat {
+    proxy-arp {
+    {%- for item in CustSetup %}
+    {%- for nat in NatSetup %}
+      interface {{ item.CustIntName -}} . {{- item.CustUntrustVlan -}} {
+        {%- if nat.NatType == 'destination' %}
+        address {
+          {{ nat.NatDestPublicIP -}} ;
+        }
+        {%- elif nat.NatType == 'static' %}
+        address {
+          {{ nat.NatStaticPublicIP -}} ;
+        }
+        {%- endif %}
+      }
+    {%- endfor %}
+    {%- endfor %}
+    }
+  }
+}

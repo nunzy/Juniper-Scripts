@@ -1,0 +1,102 @@
+security {
+  {%- for item in CustSetup %}
+  {%- for vpn in VPNSetup %}
+  ike {
+    proposal pro- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname }} {
+      authentication-method pre-shared-keys;
+      dh-group {{ vpn.VPNIKEdh -}} ;
+      authentication-algorithm {{ vpn.VPNIKEauth -}} ;
+      encryption-algorithm {{ vpn.VPNIKEenc -}} ;
+      lifetime-seconds {{ vpn.VPNIKElifetime -}} ;
+    }
+    policy pol- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname }} {
+      proposals pro- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname -}} ;
+      pre-shared-key ascii-text {{ vpn.VPNIKEpsk -}} ;
+    }
+    gateway gate- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname }} {
+      ike-policy pol- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname -}} ;
+      {%- if vpn.VPNIKEdynamic == 'True' %}
+      dynamic hostname {{ vpn.VPNIKEgateway -}} ;
+      {%- else %}
+      address {{ vpn.VPNIKEgateway -}} ;
+      {%- endif %}
+      external-interface {{item.CustIntName -}} . {{- item.CustUntrustVlan -}} ;
+    }
+  }
+  ipsec {
+    proposal pro- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname }} {
+      protocol {{ vpn.VPNIPSECproto -}} ;
+      authentication-algorithm {{ vpn.VPNIPSECauth -}} ;
+      encryption-algorithm {{ vpn.VPNIPSECenc -}} ;
+      lifetime-seconds {{ vpn.VPNIPSEClifetime -}} ;
+    }
+    policy pol- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname }} {
+      {%- if vpn.VPNIPSECpfs is defined %}
+      perfect-forward-secrecy {
+        keys {{ vpn.VPNIPSECpfs -}} ;
+      }
+      {%- endif %}
+      proposals pro- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname -}} ;
+    }
+    vpn vpn- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname -}} {
+      bind-interface {{ vpn.VPNIPSESCintf -}} ;
+      ike {
+        gateway gate- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname -}} ;
+        ipsec-policy pol- {{- item.CustName -}} - {{- item.CustCRM -}} - {{- vpn.VPNname -}} ;
+      }
+      establish-tunnels immediately;
+    }
+  }
+  policies {
+    from-zone {{ item.CustName -}} - {{- item.CustCRM -}} -Trust- {{- item.CustID }} to-zone {{ item.CustName -}} - {{- item.CustCRM -}} -VPN- {{- item.CustID }} {
+      policy {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- vpn.VPNname }} {
+        match {
+          source-address [ {{ vpn.VPNlocalsubnet }} ] ;
+          destination-address [ {{ vpn.VPNremotesubnet }} ];
+          application any;
+        }
+        then {
+          permit;
+        }
+      }
+    }
+    from-zone {{ item.CustName -}} - {{- item.CustCRM -}} -VPN- {{- item.CustID }} to-zone {{ item.CustName -}} - {{- item.CustCRM -}} -Trust- {{- item.CustID }} {
+      policy {{ item.CustName -}} - {{- item.CustCRM -}} _ {{- vpn.VPNname }} {
+        match {
+          source-address [ {{ vpn.VPNremotesubnet }} ] ;
+          destination-address [ {{ vpn.VPNlocalsubnet }} ];
+          application any;
+        }
+        then {
+          permit;
+        }
+      }
+    }
+  }
+  zones {
+    security-zone {{ item.CustName -}} - {{- item.CustCRM -}} -VPN- {{- item.CustID }} {
+      address-book {
+      {%- set remote_list = vpn.VPNremotesubnet.split(' ') %}
+      {%- for remote_item in remote_list %}
+        address {{ remote_item }} {{ remote_item -}};
+        address-set {{ vpn.VPNname -}} -remote_subnets {
+          address {{ remote_item }}
+        }
+      {%- endfor %}
+      }
+    }
+    security-zone {{ item.CustName -}} - {{- item.CustCRM -}} -Trust- {{- item.CustID }} {
+      address-book {
+      {%- set local_list = vpn.VPNlocalsubnet.split(' ') %}
+      {%- for local_item in local_list %}
+        address {{ local_item }} {{ local_item -}};
+        address-set {{ vpn.VPNname -}} -local_subnets {
+          address {{ local_item }}
+        }
+      {%- endfor %}
+      }
+    }
+  }
+  {%- endfor %}
+  {%- endfor %}
+}

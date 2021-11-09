@@ -2,29 +2,72 @@
 CustSetup:
   - CustName: DANS
     CustCRM: 312703
+    CustIntName: reth0
     CustUntrustVlan: 3000
     CustTrustVlan: 3001
+    CustUntrustNetAddr: 80.71.10.209
+    CustUntrustNetmask: 29
+    CustTrustNetAddr: 10.40.40.1
+    CustTrustNetmask: 24
+    CustID: 56034784611987064133
 
 ApplicationSetup:
-  - ApplicationProto: UDP
+  - ApplicationProto: udp
     ApplicationPort: 161
+  - ApplicationProto: udp
+    ApplicationPort: 53
 
 RuleSetup:
-  - RuleSrc: all
-    RuleDst: 10.10.10.10/32
-    RuleApplication: SNMP
-    RuleAction: Permit
+  - RuleName: dns
+    RuleSrc: any
+    RuleDst: dns.google
+    RuleApplication: udp_161 udp_53
+    RuleAction: permit
+  - RuleName: any
+    RuleSrc: any
+    RuleDst: any
+    RuleApplication: any
+    RuleAction: permit
 
 AddressSetup:
-  - AddressName: 10.10.10.10/32
+  - AddressName: dns.google
+    AddressIP: 8.8.8.8/32
+    AddressZone: Untrust
+  - AddressName: dns_svr
     AddressIP: 10.10.10.10/32
+    AddressZone: Trust
+  - AddressName: web_svr
+    AddressIP: 10.10.10.10/32
+    AddressZone: Trust
 
 NatSetup:
-  - NatSource:
-    NatSourcePool:
-    NatDestPublicIP:
-    NatDestPrivateIP:
-    NatDestPublicPort:
-    NatDestPrivatePort:
-    NatStaticPublicIP:
-    NatStaticPrivateIP:
+  - NatType: destination
+    NatDestPoolName: dns_svr
+    NatDestPublicIP: 80.71.10.210/32
+    NatDestPrivateIP: 10.10.10.10/32
+    NatDestPublicPort: 53
+    NatDestPrivatePort: 53
+  - NatType: static
+    NatStaticName: vpn_svr
+    NatStaticPublicIP: 80.71.10.211/32
+    NatStaticPrivateIP: 10.10.10.11/32
+
+VPNSetup:
+  - VPNname: unifi
+    VPNIKEverion: 1
+    VPNIKEdh: group5
+    VPNIKEauth: sha1
+    VPNIKEenc: aes-256-cbc
+    VPNIKElifetime: 28800
+    VPNIKEmode: main
+    VPNIKEpsk: pre-shared-key
+    VPNIKEdynamic: False
+    VPNIKEgateway: 1.1.1.1
+    # VPNIPSECpfs:
+    VPNIPSECproto: esp
+    VPNIPSECenc: aes-256-cbc
+    VPNIPSECauth: hmac-sha1-96
+    VPNIPSEClifetime: 3600
+    VPNIPSESCintf: st0.0
+    VPNremotesubnet: 10.40.30.0/24 10.40.20.0/24
+    VPNlocalsubnet: 10.40.40.0/24

@@ -15,11 +15,31 @@
   {{ parts|join('') }}
 {%- endmacro -%}
 
+{% set CustomerID = unique_id() %}
+
 {# Template for setup #}
 
 {% for item in CustSetup %}
+interfaces {
+  {{item.CustIntName -}} {
+    unit {{ item.CustUntrustVlan -}} {
+      description " CUST::CRM {{- item.CustCircuitID -}} :: {{- item.CustName }} - Untrust"
+      vlan-id {{ item.CustUntrustVlan -}} ;
+      family inet {
+        address {{ item.CustUntrustNetAddr -}} / {{- item.CustUntrustNetmask -}} ;
+      }
+    }
+    unit {{ item.CustTrustVlan -}} {
+      description " CUST::CRM {{- item.CustCircuitID -}} :: {{- item.CustName }} - Trust"
+      vlan-id {{ item.CustTrustVlan -}} ;
+      family inet {
+        address {{ item.CustTrustNetAddr -}} / {{- item.CustTrustNetmask -}} ;
+      }
+    }
+  }
+}
 routing-instances {
-  {{ item.CustName -}} - {{- item.CustCRM -}} - {{- unique_id() }} {
+  {{ item.CustName -}} - {{- item.CustCRM -}} - {{- CustomerID }} {
     instance-type virtual-router;
     interface reth0. {{- item.CustUntrustVlan -}} ;
     interface reth0. {{- item.CustTrustVlan -}} ;
@@ -27,16 +47,34 @@ routing-instances {
 }
 security {
   zones {
-    security-zone {{ item.CustName -}} -Untrust- {{- unique_id() }} {
+    security-zone {{ item.CustName -}} - {{- item.CustCRM -}} -Untrust- {{- CustomerID }} {
       apply-groups zone-defaults;
-      interfaces reth0. {{- item.CustUntrustVlan -}} ;
+      interfaces {{item.CustIntName -}} . {{- item.CustUntrustVlan -}} ;
     }
-    security-zone {{ item.CustName -}} -Trust- {{- unique_id() }} {
+    security-zone {{ item.CustName -}} - {{- item.CustCRM -}} -Trust- {{- CustomerID }} {
       apply-groups zone-defaults;
-      interfaces reth0. {{- item.CustTrustVlan -}} ;
+      interfaces {{item.CustIntName -}} . {{- item.CustTrustVlan -}} ;
     }
-    security-zone {{ item.CustName -}} -VPN- {{- unique_id() }} {
+    security-zone {{ item.CustName -}} - {{- item.CustCRM -}} -VPN- {{- CustomerID }} {
       apply-groups zone-defaults;
+    }
+  }
+  nat {
+    source {
+      rule-set {{ item.CustName -}} - {{- item.CustCRM -}} _turst-to-untrust {
+        from zone {{ item.CustName -}} - {{- item.CustCRM -}} -Trust- {{- CustomerID -}} ;
+        to zone {{ item.CustName -}} - {{- item.CustCRM -}} -Untrust- {{- CustomerID -}} ;
+        rule {{ item.CustName -}} _snat {
+          match {
+            source-address 0.0.0.0/0;
+          }
+          then {
+            source-nat {
+              interface;
+            }
+          }
+        }
+      }
     }
   }
 }
