@@ -19,9 +19,9 @@ cust_result = '-'.join([cust_name,cust_crm])
 cust_full = '-'.join([cust_name,cust_crm,cust_id])
 
 ### Render the jinja2 template for debug
-myconfig = mytemplate.render(mydata)
-print("\n### Here's the full config:")
-print(myconfig)
+#myconfig = mytemplate.render(mydata)
+#print("\n### Here's the full config:")
+#print(myconfig)
 
 ## Define connection details
 hostname = "pe-f-00.gwr.uk.hso-group.net"

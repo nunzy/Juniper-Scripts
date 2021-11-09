@@ -30,7 +30,11 @@ security {
     {%- for addr in AddressSetup %}
     security-zone {{ item.CustName -}} - {{- item.CustCRM -}} - {{- addr.AddressZone -}} - {{- item.CustID }} {
       address-book {
+        {%- if addr.AddressName is defined %}
         address {{ addr.AddressName }} {{ addr.AddressIP -}} ;
+        {%- else %}
+        address  {{ addr.AddressIP }}  {{ addr.AddressIP -}} ;
+        {%- endif %}
       }
     }
     {%- endfor %}

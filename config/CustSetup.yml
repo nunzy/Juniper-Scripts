@@ -39,6 +39,8 @@ AddressSetup:
   - AddressName: web_svr
     AddressIP: 10.10.10.10/32
     AddressZone: Trust
+  - AddressIP: 10.40.40.254/32
+    AddressZone: Trust
 
 NatSetup:
   - NatType: destination
